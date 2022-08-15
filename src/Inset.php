@@ -49,8 +49,9 @@ class Inset
     const REGEX_STRING      = '/^(?: "(?:[^"\\\\]*(?:\\\\.[^"\\\\]*)*)" | \'(?:[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*)\' )/smx';
     const REGEX_NAME        = '/^[A-Za-z_][A-Za-z0-9_]*/';
     const REGEX_COMPOUNDNAME = '/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*/'; // uses compound name delimiter
-    const REGEX_BLOCKTYPE   = '/^(?:meta|if|elseif|else|endif|slot|for|endfor|embed|with|endwith)\W/';
-
+    //const REGEX_BLOCKTYPE   = '/^(?:meta|if|elseif|else|endif|slot|for|endfor|embed|with|endwith)\W/';
+    const REGEX_BLOCKTYPE   = '/^(?:if|elseif|else|endif|slot|for|endfor|embed|with|endwith)\W/';
+    
     private $_code = null;
     private $_code_end = null;
     private $_last_chip = null;
@@ -75,7 +76,8 @@ class Inset
      */
     protected $parent_inset = null;
 
-    /** @var \emperor\eddy\Entry|null Inset's meta, retrieved in last rendering */
+    ///** @ var \emperor\eddy\Entry|null Inset's meta, retrieved in last rendering */
+    /** @var null Must be null for standalone version of Inset*/
     protected $meta = null;
     /** @var array Inset's slots, filled in last rendering */
     protected $slots = array();
@@ -90,6 +92,74 @@ class Inset
     protected $fillers = array();
 
     protected $rendered_insets = array();
+
+	/**
+	 * Ensures a given value to be a certain string. Other types are converted to
+	 * an empty string. Optionally numeric values can be converted to a string
+	 * representing them.
+	 *
+	 * @param mixed $value
+	 * @param bool $allow_numerics
+	 * @return string
+     * @static
+	 */
+	static function ensure_string($value, $allow_numerics = true)
+	{
+		if ( $allow_numerics )
+			return ( is_string($value) || is_int($value) || is_float($value) )? (string) $value : '';
+		else
+			return is_string($value)? $value : '';
+	}
+
+    /**
+	 * Returns an array of strings created by splitting the given string on
+	 * boundaries formed by the delimiter. As opposed to standart PHP explode
+	 * function, can skip empty chunks, and optionally can trim other chunks.
+	 *
+	 * Also, optionally can limits number of returned chunks.
+	 *
+	 * @param string $delimiter
+	 * @param string $string
+	 * @param bool $trim OPTIONAL
+	 * @param int|null $limit OPTIONAL
+	 * @param bool $skip_empty OPTIONAL
+	 * @return array
+     * @static
+	 */
+	static function array_explode($delimiter, $string, $trim = false, $limit = null, $skip_empty = true)
+	{
+		$string = (string) $string;
+		$delimiter = (string) $delimiter;
+		if ($delimiter === '') return false;
+
+		$chunks = ($limit === null)? \explode($delimiter, $string) : \explode($delimiter, $string, $limit);
+
+		$returned_chunks = array();
+		foreach ($chunks as $key => $value) {
+			if ( $trim ) $value = trim($value);
+			if ( !($skip_empty && $value === '') ) $returned_chunks[] = $value;
+		}
+
+		return $returned_chunks;
+	}
+
+	/**
+	 * Indicates whether filepath has backwards.
+	 *
+	 * @param string $path
+	 * @return bool
+     * @static
+	 */
+	static function path_has_backwards($path)
+	{
+		$path = '/' . trim($path) . '/';
+		if ( ($pos = strpos($path, '..')) === false) return false;
+		return (
+			($path[$pos-1] === '/' || $path[$pos-1] === '\\') &&
+			($path[$pos+2] === '/' || $path[$pos+2] === '\\')
+		);
+	}
+
 
     /**
      * Creates inset's instance. Automatically load source code if filename
@@ -238,7 +308,7 @@ class Inset
         elseif ( $wanted & self::CHIP_COMPOUNDNAME && preg_match(self::REGEX_COMPOUNDNAME, $code, $match) )
         {
             $this->_last_chip = self::CHIP_COMPOUNDNAME;
-            $ret = \emperor\array_explode(self::SNTX_DLM_COMPOUND, $match[0]);
+            $ret = self::array_explode(self::SNTX_DLM_COMPOUND, $match[0]);
             if (count($ret) === 1) { $ret = $ret[0];}
         }
         // name
@@ -366,6 +436,7 @@ class Inset
 
             // [meta]
             // Meta-token contains "record", that is a EDDY inside the token.
+            /*
             case 'meta':
                 $ret['record'] = \emperor\eddy\Parser::parse(
                     $this->_code, $pos_next,
@@ -376,6 +447,7 @@ class Inset
                 );
                 $pos_next = \emperor\eddy\Parser::getEndPos();
                 break;
+            */    
 
             // [slot]
             // Slot-token contains a name (not a compound name!)
@@ -683,7 +755,7 @@ class Inset
                     case 'embed':
                         // retrieve canonicalized filename
                         $filename = null;
-                        if ($this->isEmbedExternal() || !\emperor\path_has_backwards($this->tokens[$i]['filename'])) {
+                        if ($this->isEmbedExternal() || !self::path_has_backwards($this->tokens[$i]['filename'])) {
                             $filename = realpath( dirname($this->filename) . '/' . $this->tokens[$i]['filename'] );
                             if (!is_file($filename) || !is_readable($filename)) $filename = null;
                         }
@@ -822,7 +894,7 @@ class Inset
         if ($this->tokens === null) return '';
 
         // inset is rendering now?
-        if ($this->_is_rendering_now) throw new \Exception(__CLASS__, 2, 'Recursive inset rendering occured', $this);
+        if ($this->_is_rendering_now) throw new \Exception('Recursive inset rendering occured', 2);
         $this->_is_rendering_now = true;
         $this->_rendered_insets = array();
 
@@ -866,7 +938,7 @@ class Inset
                         $output .= $var->render(true);
                         $this->rendered_insets[] = $var;
                     } else {
-                        $output .= \emperor\ensure_string($var);
+                        $output .= self::ensure_string($var);
                     }
                 }
 
@@ -875,6 +947,7 @@ class Inset
                 else {
                     switch ($token['type'])
                     {
+                        /*
                         case 'meta':
                             // sets meta record, or merges it with previous
                             if ($this->meta === null)
@@ -882,6 +955,7 @@ class Inset
                             else
                                 $this->meta->merge($token['record']);
                             break;
+                        */
 
                         case 'slot':
                             // fill the slot with content
@@ -1013,8 +1087,10 @@ class Inset
                             //var_dump($this->meta);
                             //var_dump($inset->getMeta());
 
+                            /*
                             if ($this->meta === null) $this->meta = $inset->getMeta();
                             else $this->meta->merge($inset->getMeta());
+                            */
 
                             //var_dump($this->meta);
                             break;
@@ -1171,7 +1247,7 @@ class Inset
                         // retrieve fetchname
                         $param = ($filter[1] !== null)? $filter[1][0] : null;
                         $fetchname = $this->_renderVariable($param);
-                        if (! ($fetchname = \emperor\ensure_string($fetchname)) ) { $value = null; break;}
+                        if (! ($fetchname = self::ensure_string($fetchname)) ) { $value = null; break;}
 
                         // fetch value (from an array or an object)
                         if (is_array($value) && isset($value[$fetchname])) $value = $value[$fetchname];
@@ -1219,34 +1295,34 @@ class Inset
 
                     // makes a value's every word capitalized
                     case 'title':
-                        $value = ucwords(\emperor\ensure_string($value));
+                        $value = ucwords(self::ensure_string($value));
                         break;
 
                     // makes a value's first character uppercase
                     case 'capitalize':
-                        $value = ucfirst(\emperor\ensure_string($value));
+                        $value = ucfirst(self::ensure_string($value));
                         break;
 
                     // makes a value uppercase
                     case 'upper':
-                        $value = strtoupper(\emperor\ensure_string($value));
+                        $value = strtoupper(self::ensure_string($value));
                         break;
 
                     // makes a value lowercase
                     case 'lower':
-                        $value = strtolower(\emperor\ensure_string($value));
+                        $value = strtolower(self::ensure_string($value));
                         break;
 
                 /// Safety filters
 
                     // strips HTML/PHP tags from a value
                     case 'striptags':
-                        $value = strip_tags(\emperor\ensure_string($value));
+                        $value = strip_tags(self::ensure_string($value));
                         break;
 
                     // convert special characters to HTML entities
                     case 'escape_html':
-                        $value = htmlspecialchars(\emperor\ensure_string($value));
+                        $value = htmlspecialchars(self::ensure_string($value));
                         break;
 
                 /// Functional filters
@@ -1371,7 +1447,8 @@ class Inset
 
     /**
      * Returnes meta retrieved in last rendering, or NULL if there was no meta.
-     * @return \emperor\eddy\Entry|null
+     * @ return \emperor\eddy\Entry|null
+     * @return null
      */
     public function getMeta()
     {
