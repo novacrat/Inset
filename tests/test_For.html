@@ -1,0 +1,16 @@
+{# iteration #}
+{[ for item in One ]}
+{{ item }}
+{[ endfor ]}
+
+{# multi iteration #}
+{[ for item in Two ]}
+{[ for inner_item in item ]}
+{{ inner_item }}
+{[ endfor ]}
+{[ endfor ]}
+
+{# single-value variable theated as one-element array #}
+{[ for item in Three ]}
+{{ item }}
+{[ endfor ]}

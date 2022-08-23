@@ -1,0 +1,17 @@
+
+{# With statement makes equivalents for variable labels.
+New variable introduced for followed statement #}
+{[ with Two as One ]}
+{{ One }}={{ Two }}
+{[ endwith ]}
+
+{[ slot FirstSlot ]}
+
+{[ with B as Three.1]}
+{{ B }}
+{[ endwith ]}
+
+{# Embedding other file with optional labels #}
+{[ embed 'test_Embed.html' : Three as Three.1]}
+
+{[ slot SecondSlot ]}

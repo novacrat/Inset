@@ -1,0 +1,42 @@
+{# must be a variable #}
+{[if 1]}a{[endif]}One
+
+{# simple statement #}
+{[ if Two ]}
+b
+{[ endif ]}
+
+{# else statement #}
+{[ if Three ]}
+c
+{[ else ]}
+d
+{[ endif ]}
+
+{# inner statement #}
+{[ if Four ]}
+e
+{[ else ]}
+{[ if Five ]}
+f
+{[ endif ]}
+g
+{[ endif ]}
+
+{# multichoice statement #}
+{[ if Six : 6 ]}
+i
+{[ elseif Six : 7 ]}
+j
+{[ else ]}
+k
+{[ endif ]}
+
+{# multichoice with different variables statement not allowed #}
+{[ if Six : 6 ]}
+l
+{[ elseif Seven : 8 ]}
+m
+{[ else ]}
+n
+{[ endif ]}
