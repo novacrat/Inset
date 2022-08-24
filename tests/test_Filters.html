@@ -1,0 +1,17 @@
+{{ Text|title }}
+{{ String|capitalize }}
+{{ String|upper }}
+{{ String|upper|lower }}
+{{ Html|striptags }}
+{{ Html|escape }}
+{{ String|length }}
+
+{[ if Number|odd|not ]}even{[ endif ]}
+{{ Array|fetch('A') }}
+
+{[ for item in Array ]}
+{{ item|iteration }}
+{{ item|key }}
+{[ endfor ]}
+
+{{ Date|date('Y-m-d') }}

@@ -1247,7 +1247,11 @@ class Inset
                         // retrieve fetchname
                         $param = ($filter[1] !== null)? $filter[1][0] : null;
                         $fetchname = $this->_renderVariable($param);
-                        if (! ($fetchname = self::ensure_string($fetchname)) ) { $value = null; break;}
+                        var_dump($fetchname);
+                        if ( ($fetchname = self::ensure_string($fetchname)) === '') { 
+                            $value = null; 
+                            break;
+                        }
 
                         // fetch value (from an array or an object)
                         if (is_array($value) && isset($value[$fetchname])) $value = $value[$fetchname];
@@ -1280,16 +1284,22 @@ class Inset
                     // date filter
                     // formats given date to a format "DD.MM.YYYY"
                     // accepts both timestamps and DateTime instances
+                    /*
                     case 'date':
                         $format = isset($filter[1][0])? (string) $filter[1][0]['content'] : "Y-m-d";
                         if ($value) $value = date($format, $value);
                         break;
+                     * 
+                     */
 
                     // russian date filter
                     // formats given date to a format "DD.MM.YYYY"
                     // accepts both timestamps and DateTime instances
+                        /*
                     case 'date_ru':
                         break;
+                         * 
+                         */
 
                 /// Strings filters
 
@@ -1321,7 +1331,7 @@ class Inset
                         break;
 
                     // convert special characters to HTML entities
-                    case 'escape_html':
+                    case 'escape':
                         $value = htmlspecialchars(self::ensure_string($value));
                         break;
 
@@ -1334,6 +1344,7 @@ class Inset
                         if (is_array($value) || is_object($value)) $value = count($value);
                         break;
 
+                        /*
                     case 'with':
                         if ($value instanceof Inset) {
                             $var_name = isset($filter[1][0])? (string) $filter[1][0]['content'] : null;
@@ -1341,6 +1352,8 @@ class Inset
                             $value->setVar($var_name, $var_value);
                         }
                         break;
+                         * 
+                         */
 
                 /// Unknown filter, do nothing
                     default:

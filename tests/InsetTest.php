@@ -54,10 +54,24 @@ final class InsetTest extends TestCase
         $in = new Inset('test_Blocks.html');
         $in->setVar('One', '1');
         $in->setVar('Two', '2');
-        $in->setVar('Three', array(2, 3));
+        $in->setVar('Three', array(7, 8, 9));
         $in->setFiller('SecondSlot', 'Q');
         $out = $in->render();
-        $this->assertSame("1=13EMBED123Q", $out);
+        $this->assertSame("1=189EMBED127Q", $out);
         $this->assertTrue($in->hasSlot('FirstSlot'));
     }
+    
+    public function testFilters() {
+        $in = new Inset('test_Filters.html');
+        $in->setVar('String', 'abc');
+        $in->setVar('Text', 'def ghi');
+        $in->setVar('Html', '<b>tag</b>');
+        $in->setVar('Number', 2);
+        $in->setVar('Array', ['A'=> 'a', 'B'=>'b', 3]);
+        //$in->setVar('Date', '11/11/2011');
+        $out = $in->render();
+        $this->assertSame("Def GhiAbcABCabctag&lt;b&gt;tag&lt;/b&gt;3evena1A2B30", $out);
+ 
+    }
+    
 }
